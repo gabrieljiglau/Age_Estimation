@@ -15,44 +15,44 @@ def preprocess(args: argparse.Namespace) -> pd.DataFrame:
     """
 
     """
-    The labels of each face image is embedded in the file name, formated like [age]_[gender]_[race]_[date&time].jpg
+    The labels of each face image is embedded in the file name, formated like [age]_[gender]_[ethnicity]_[date&time].jpg
 
         [age] is an integer from 0 to 116, indicating the age
         [gender] is either 0 (male) or 1 (female)
-        [race] is an integer from 0 to 4, denoting White, Black, Asian, Indian, and Others (like Hispanic, Latino, Middle Eastern).
+        [ethnicity] is an integer from 0 to 4, denoting White, Black, Asian, Indian, and Others (like Hispanic, Latino, Middle Eastern).
     """
 
     if Path(args.out_path.exists()) and not args.force_run:
         return pd.read_csv(args.out_path)
 
     gender_map = {0: "Male", 1: "Female"}
-    race_map = {0: "White", 1: "Black", 2: "Asian", 3: "Indian", 4: "Others"}
+    ethnicity_map = {0: "White", 1: "Black", 2: "Asian", 3: "Indian", 4: "Others"}
 
     path = Path(args.input_path)
 
     file_names = []
     ages = []
     genders = []
-    races = []
+    ethnicities = []
     for file in path.iterdir():
         if file.suffix == 'jpg':
             match = re.fullmatch("r([1-9])+([0-9])?([0-9])?_([0-1])_([0-4])_(.)*", file.stem)
 
             if match:
-                age, gender, race = map(int, match.groups())
+                age, gender, ethnicity = map(int, match.groups())
                 gender = gender_map[gender] if gender_map[gender] else None
-                race = race_map[race] if race_map[race] else None
+                ethnicity = ethnicity_map[ethnicity] if ethnicity_map[ethnicity] else None
 
                 ages.append(age)
                 genders.append(gender)
-                races.append(race)
+                ethnicities.append(ethnicity)
                 file_names.append(file.name)
         else:
             raise FileNotFoundError("The input directory doesn't contain images in .jpg format")
 
 
-    tuples = list(zip(file_names, ages, genders, races))
-    df = pd.DataFrame(tuples, columns = ['img_source', 'age', 'gender', 'race'])
+    tuples = list(zip(file_names, ages, genders, ethnicities))
+    df = pd.DataFrame(tuples, columns = ['img_source', 'age', 'gender', 'ethnicity'])
     df.to_csv(args.out_path, index=False)
 
     return df
