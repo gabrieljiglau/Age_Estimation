@@ -4,7 +4,14 @@ import pandas as pd
 from pathlib import Path
 
 """
-this file is intended to be ran as a script
+this file is intended to be ran as a script;
+it adds the original images to a pandas Dataframe, alongside its metadata
+and saves it as a new csv
+
+Usage:
+--------------------------
+    python scripts/parser.py --dataset_dir --csv_dataset_dir --force_run
+--------------------------
 """
 
 def preprocess(args: argparse.Namespace) -> pd.DataFrame:
@@ -63,4 +70,6 @@ if __name__ == '__main__':
     parser.add_argument('--input_path', type=str)
     parser.add_argument('--out_path', type=str)
     parser.add_argument('--force_run', type=bool)
+
     cl_arguments = parser.parse_args()
+    preprocess(cl_arguments)

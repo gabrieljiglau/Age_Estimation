@@ -1,7 +1,6 @@
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
-from torch.utils.data.dataset import _T_co
 from torchvision.transforms import Compose
 from pathlib import Path
 from PIL import Image
