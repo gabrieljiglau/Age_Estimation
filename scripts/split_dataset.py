@@ -36,48 +36,57 @@ def split_dataset(args: argparse.Namespace) -> None:
     # 2 splits: i) train / test (90% - 10%)
     #           ii) train (train / validate) (80% - 20%) of the remaining 90%
 
-    full_size = len(args.input_csv)
+    original_df = pd.read_csv(args.input_csv)
 
-    full_train_size = int(np.floor(full_size * 0.9))
-    test_size = full_size - full_train_size
+    # drop all rows where the age > 100, since there should be at least 2 instances
+    # when splitting the dataset and having 'stratify' not None
+    indices = original_df[original_df['age'] > 100].index
+    original_df.drop(indices, inplace=True)
 
-    train_size = int(np.floor(test_size * 0.8))
-    valid_size = full_train_size - train_size
+    full_size = len(original_df)
+    print(f"full_size = {full_size}")  # full_size = 23618
 
     # randomize the dataset, since currently the images are sorted by age
-    randomized_csv = args.input_csv.sample(frac=1, random_state=13).reset_index(drop=True)
+    randomized_csv = original_df.sample(frac=1, random_state=13).reset_index(drop=True)
 
     full_train_set, test_set = train_test_split(
         randomized_csv,
-        [full_train_size, test_size],
+        test_size=args.test_train_split,
         stratify=randomized_csv['age'],
         random_state=7
     )
 
     train_set, valid_set = train_test_split(
         full_train_set,
-        [train_size, valid_size],
-        stratify=randomized_csv['age'],
+        test_size=args.valid_train_split,
+        stratify=full_train_set['age'],
         random_state=7
     )
 
-    print(f"train    -> {len(train_set)} images; mean age = {train_set['age'].median():.2f}")
-    print(f"validate -> {len(valid_set)} images; mean age = {valid_set['age'].median():.2f}")
-    print(f"test     -> {len(test_set)} images; mean age = {test_set['age'].median():.2f}")
+    print(f"train    -> {len(train_set)} images; median age = {train_set['age'].median():.2f}"
+          f" mean age = {train_set['age'].mean():.2f}")
+
+    print(f"validate -> {len(valid_set)} images; median age = {valid_set['age'].median():.2f}"
+          f" mean age = {valid_set['age'].mean():.2f}")
+
+    print(f"test     -> {len(test_set)} images; median age = {test_set['age'].median():.2f}"
+          f" mean age = {test_set['age'].mean():.2f}")
 
     # save the train/test datasets as separate csv files
     datasets = [train_set, valid_set, test_set]
-    [datasets[i].to_csv(output_paths[i]) for i in range(len(datasets))]
+    [datasets[i].to_csv(output_paths[i], index=False) for i in range(len(datasets))]
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_csv', type=str)
-    parser.add_argument('--dataset_train', type=str)
-    parser.add_argument('--dataset_validate', type=str)
-    parser.add_argument('--dataset_test', type=str)
-    parser.add_argument('--force_run', type=bool)
+    parser.add_argument('--input_csv', type=str, default='dataset/processed/UTKFace.csv')
+    parser.add_argument('--dataset_train', type=str, default='dataset/processed/train_dataset.csv')
+    parser.add_argument('--dataset_validate', type=str, default='dataset/processed/valid_dataset.csv')
+    parser.add_argument('--dataset_test', type=str, default='dataset/processed/test_dataset.csv')
+    parser.add_argument('--test_train_split', type=float, default=0.15)
+    parser.add_argument('--valid_train_split', type=float, default=0.2)
+    parser.add_argument('--force_run', type=bool, default=False)
 
     cl_arguments = parser.parse_args()
     split_dataset(cl_arguments)
