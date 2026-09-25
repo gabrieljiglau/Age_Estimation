@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 
 dataset/raw/
-dataset/processed/
 
 # C extensions
 *.so

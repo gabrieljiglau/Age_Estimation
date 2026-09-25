@@ -1,5 +1,4 @@
 import argparse
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from pathlib import Path
@@ -11,7 +10,7 @@ and a validation dataset
 
 Usage:
 --------------------------
-    python scripts/split_dataset.py --input_csv --dataset_train --dataset_validate --dataset_test
+    python scripts/split_dataset.py
 --------------------------
 """
 
@@ -38,9 +37,8 @@ def split_dataset(args: argparse.Namespace) -> None:
 
     original_df = pd.read_csv(args.input_csv)
 
-    # drop all rows where the age > 100, since there should be at least 2 instances
-    # when splitting the dataset and having 'stratify' not None
-    indices = original_df[original_df['age'] > 100].index
+    # drop all rows where the age > 80, since such images are outliers
+    indices = original_df[original_df['age'] > args.age_threshold].index
     original_df.drop(indices, inplace=True)
 
     full_size = len(original_df)
@@ -86,6 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_test', type=str, default='dataset/processed/test_dataset.csv')
     parser.add_argument('--test_train_split', type=float, default=0.15)
     parser.add_argument('--valid_train_split', type=float, default=0.2)
+    parser.add_argument('--age_threshold', type=int, default=80)
     parser.add_argument('--force_run', type=bool, default=False)
 
     cl_arguments = parser.parse_args()
