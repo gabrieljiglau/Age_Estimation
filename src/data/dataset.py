@@ -11,7 +11,8 @@ class UtkFaceDataset(Dataset):
     def __init__(self,
                  root_path: str | Path,
                  csv_dir: str | Path,
-                 transform: Compose | None = None) -> None:
+                 transform: Compose | None = None
+    ) -> None:
 
         """
         :param root_path: path/to/UTKFace dataset
@@ -31,7 +32,9 @@ class UtkFaceDataset(Dataset):
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor, int, int]:
+    def __getitem__(
+            self,
+        index) -> tuple[torch.Tensor, torch.Tensor, int, int]:
 
         row = self.dataset.iloc[index]
         image_path = self.root_dir / row["img_source"]
@@ -44,7 +47,7 @@ class UtkFaceDataset(Dataset):
         return image, age, row["gender"], row["ethnicity"]
 
 
-def build_dataloader(
+def build_dataloaders(
         root_dir: str | Path,
         csv_dir: str | Path,
         train_transform: Compose,
@@ -55,6 +58,10 @@ def build_dataloader(
         num_workers: int=4,
         pin_memory: bool=True
 ) -> tuple [DataLoader, DataLoader, DataLoader]:
+
+    """
+        prepares and returns DataLoaders for each dataset (train, valid and test)
+    """
 
     csv_dir = Path(csv_dir)
 
