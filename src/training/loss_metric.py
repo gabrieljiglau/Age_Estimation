@@ -25,29 +25,38 @@ class MeanVarianceLoss(nn.Module):
         self.lambda_mean = lambda_mean
         self.lambda_variance = lambda_variance
 
-        ages = torch.arange(start_age, end_age + 1, dtype=torch.float32)
-        self.register_buffer("ages", ages)
-
-        ages_squared = ages ** 2
-        self.register_bufer("ages_squared", ages_squared)
-
+        self.ages = torch.arange(start_age, end_age + 1, dtype=torch.float32)
+        self.register_buffer("ages", self.ages)
 
     def compute_loss(
             self,
-            x: torch.Tensor,
+            logits: torch.Tensor,
             target: torch.Tensor,
-            model: nn.Module
-    ) -> float:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
 
         """
             the network predicts a distribution over ages
             we will then track the mean and variance of that distribution and aim to minimize it
         """
+        # view(a, b)
+        # a = -1 if you don't know the number of dimensions beforehand
+        # b = the size of that specific dimensions;
+        # in this case, the tensor is 2D, therefore view(-1, 1) means flatten it into a 1D column vector
 
-        logits = model(x)
-        probs = nn.Softmax(logits)
-        classes = [i for i in range(model.num_classes)]
+        target = target.view(-1, 1)
+        probs = torch.softmax(logits, dim=1)
 
-        mean = torch.sum(probs * classes)
-        var = torch.sum((torch.pow(classes - mean), 2) * probs)
+        expected_age = torch.sum(self.ages * probs, dim=1, keepdim=True)
+        mean_loss = torch.abs(expected_age - target).mean()
 
+        expected_age_squared = torch.sum((self.ages ** 2) * probs, dim=1, keepdim=True)
+        var_loss = torch.abs(expected_age_squared - expected_age ** 2).mean()
+
+        total_loss = self.lambda_mean * mean_loss + self.lambda_variance * var_loss
+        return total_loss, mean_loss, var_loss
+
+    @torch.no_grad
+    def predict_age(self, logits: torch.Tensor) -> torch.Tensor:
+
+        probs = torch.softmax(logits, dim=1)
+        return torch.sum(self.ages * probs, dim=1)

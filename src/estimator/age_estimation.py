@@ -35,9 +35,6 @@ class ResNet(nn.Module):
             and adds a new fully connected layer at the end
         """
 
-        for param in self.estimator.parameters():
-            param.requires_grad = False
-
         num_features = self.estimator.fc.in_features
 
         self.estimator.head = nn.Sequential(
