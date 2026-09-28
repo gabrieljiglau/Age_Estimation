@@ -34,7 +34,8 @@ class UtkFaceDataset(Dataset):
 
     def __getitem__(
             self,
-        index) -> tuple[torch.Tensor, torch.Tensor, int, int]:
+            index
+    ) -> tuple[torch.Tensor, torch.Tensor, int, int]:
 
         row = self.dataset.iloc[index]
         image_path = self.root_dir / row["img_source"]

@@ -11,7 +11,7 @@ class ResNet(nn.Module):
 
     def __init__(
             self,
-            num_classes: int=79,
+            num_classes: int=80,
             dropout_prob: float=0.3
     ) -> None:
 
@@ -20,7 +20,8 @@ class ResNet(nn.Module):
         self.num_classes = num_classes
         self.dropout_prob = dropout_prob
 
-        self.estimator = resnet50(weights=ResNet50_Weights.DEFAULT)
+        backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
+        self.estimator.backbone = backbone
         self._make_head(self.num_classes, self.dropout_prob)
 
 

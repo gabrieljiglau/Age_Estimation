@@ -36,7 +36,7 @@ class MeanVarianceLoss(nn.Module):
 
         """
             the network predicts a distribution over ages
-            we will then track the mean and variance of that distribution and aim to minimize it
+            we will track the mean and variance of that distribution and aim to minimize it
         """
         # view(a, b)
         # a = -1 if you don't know the number of dimensions beforehand
