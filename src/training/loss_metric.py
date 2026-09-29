@@ -41,7 +41,7 @@ class MeanVarianceLoss(nn.Module):
         # view(a, b)
         # a = -1 if you don't know the number of dimensions beforehand
         # b = the size of that specific dimensions;
-        # in this case, the tensor is 2D, therefore view(-1, 1) means flatten it into a 1D column vector
+        # in this case, the tensor is 2D, therefore, view(-1, 1) means 'flatten it into a 1D column vector'
 
         target = target.view(-1, 1)
         probs = torch.softmax(logits, dim=1)
@@ -57,6 +57,10 @@ class MeanVarianceLoss(nn.Module):
 
     @torch.no_grad
     def predict_age(self, logits: torch.Tensor) -> torch.Tensor:
+
+        """
+            :returns: the expected age based on their distribution (found after applying softmax)
+        """
 
         probs = torch.softmax(logits, dim=1)
         return torch.sum(self.ages * probs, dim=1)
