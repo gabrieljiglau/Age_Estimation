@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 from torchvision.models import resnet50
 from torchvision.models import ResNet50_Weights
+from omegaconf import DictConfig
 
-class ResNet(nn.Module):
+class AgeEstimator(nn.Module):
 
     """
         age estimator using the pretrained ResNet50 on ImageNet
@@ -15,7 +16,7 @@ class ResNet(nn.Module):
             dropout_prob: float=0.3
     ) -> None:
 
-        super(ResNet, self).__init__()
+        super(AgeEstimator, self).__init__()
 
         self.num_classes = num_classes
         self.dropout_prob = dropout_prob
@@ -58,3 +59,20 @@ class ResNet(nn.Module):
         """
 
         return self.estimator(x)
+
+    @property
+    def get_num_parameters(self) -> float:
+        """
+        total trainable parameters (in millions), rounded to 2 decimals
+        """
+        return round(sum(p.numel() for p in self.parameters() if p.requires_grad) / 1e6, 2)
+
+
+def build_model(cfg: DictConfig) -> AgeEstimator:
+    """
+    instantiate the AgeEstimator, based on an OmegaConf config file
+    """
+
+    return AgeEstimator(
+        num_classes=cfg.num_classes,
+        dropout_prob=cfg.model.dropout)

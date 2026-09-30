@@ -1,3 +1,3 @@
-from .age_estimation import ResNet
+from .age_estimation import AgeEstimator
 
-__all__ = ["ResNet"]
+__all__ = ["AgeEstimator"]
