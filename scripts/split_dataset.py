@@ -22,6 +22,8 @@ def split_dataset(args: argparse.Namespace) -> None:
     :return: a DataFrame containing the image, alongside the age, sex and ethnicity
     """
 
+    ## TODO: add a 4th calibrating dataset for conformal prediction
+
     output_paths = tuple(Path(path) for path in (
         args.dataset_train,
         args.dataset_validate,
