@@ -148,7 +148,7 @@ class Trainer:
                 logits = self.model(image)
                 valid_loss, _, _ = self.loss_function.compute_loss(logits, target)
 
-            pred_ages = self.loss_function.predict_age(logits)
+            pred_ages, _ = self.loss_function.predict_age(logits)
             mae_valid_loss = compute_mae(pred_ages, target)
 
             all_preds.append(pred_ages.cpu())
@@ -220,7 +220,7 @@ class Trainer:
 
             if mae_train_loss < min_loss:
                 min_loss = mae_train_loss
-                self._save_model(epoch, mae)
+                self._save_model(epoch, mae_train_loss)
 
             if self.writer:
                 self.writer.close()

@@ -1,5 +1,3 @@
-from typing import Any
-
 import torch
 import torch.nn as nn
 
@@ -56,11 +54,13 @@ class MeanVarianceLoss(nn.Module):
         return total_loss, mean_loss, var_loss
 
     @torch.no_grad
-    def predict_age(self, logits: torch.Tensor) -> torch.Tensor:
+    def predict_age(self, logits: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
 
         """
-            :returns: the expected age based on their distribution (found after applying softmax)
+            :returns: the expected age and the variance of a given instance
         """
 
         probs = torch.softmax(logits, dim=1)
-        return torch.sum(self.ages * probs, dim=1)
+        pred_age = torch.sum(self.ages * probs, dim=1)
+        variance_squared = torch.sum(((self.ages - pred_age) ** 2) * probs, dim = 1)
+        return pred_age, torch.sqrt(variance_squared)
