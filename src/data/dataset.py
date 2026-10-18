@@ -58,10 +58,10 @@ def build_dataloaders(
         eval_batch_size: int=128,
         num_workers: int=4,
         pin_memory: bool=True
-) -> tuple [DataLoader, DataLoader, DataLoader]:
+) -> tuple [DataLoader, DataLoader, DataLoader, DataLoader]:
 
     """
-        prepares and returns DataLoaders for each dataset (train, valid and test)
+        prepares and returns DataLoaders for each dataset (train, valid and test, calibration)
     """
 
     csv_dir = Path(csv_dir)
@@ -69,6 +69,7 @@ def build_dataloaders(
     train_dataset = UtkFaceDataset(root_dir, csv_dir / "train_dataset.csv", train_transform)
     valid_dataset = UtkFaceDataset(root_dir, csv_dir / "valid_dataset.csv", val_transform)
     test_dataset = UtkFaceDataset(root_dir, csv_dir / "test_dataset.csv", test_transform)
+    calibrate_dataset = UtkFaceDataset(root_dir, csv_dir / "calibrate_dataset.csv", )
 
     train_loader = DataLoader(
         train_dataset,
@@ -95,5 +96,13 @@ def build_dataloaders(
         pin_memory=pin_memory
     )
 
-    return train_loader, valid_loader, test_loader
+    calibrate_loader = DataLoader(
+        calibrate_dataset,
+        batch_size=eval_batch_size,
+        shuffle=False,  # by default set to False
+        num_workers=num_workers,
+        pin_memory=pin_memory
+    )
+
+    return train_loader, valid_loader, test_loader, calibrate_loader
 

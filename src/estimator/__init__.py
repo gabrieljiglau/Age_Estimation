@@ -1,3 +1,3 @@
-from .age_estimation import AgeEstimator
+from .age_estimation import AgeEstimator, build_model
 
-__all__ = ["AgeEstimator"]
+__all__ = ["AgeEstimator", "build_model"]

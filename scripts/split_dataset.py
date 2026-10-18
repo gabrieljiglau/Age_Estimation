@@ -11,22 +11,30 @@ and a validation dataset
 Usage:
 --------------------------
     python scripts/split_dataset.py
+            --input_csv
+            --dataset_train
+            --dataset_validate
+            --dataset_test
+            --dataset_calibrate
+            --test_train_split
+            --valid_train_split
+            --test_calibrate_split
+            --age_threshold
+            --force_run
 --------------------------
 """
 
 def split_dataset(args: argparse.Namespace) -> None:
 
     """
-    :param args: should contain -full/path/to/csv_dataset,
-            desired/path/to/csv_train, desired/path/to_csv/validate, desired/path/to_csv/test
+    :param args: all CLI arguments
     :return: a DataFrame containing the image, alongside the age, sex and ethnicity
     """
-
-    ## TODO: add a 4th calibrating dataset for conformal prediction
 
     output_paths = tuple(Path(path) for path in (
         args.dataset_train,
         args.dataset_validate,
+        args.dataset_calibrate,
         args.dataset_test
         )
     )
@@ -34,8 +42,8 @@ def split_dataset(args: argparse.Namespace) -> None:
     if all(path.exists() for path in output_paths) and not args.force_run:
         return
 
-    # 2 splits: i) train / test (90% - 10%)
-    #           ii) train (train / validate) (80% - 20%) of the remaining 90%
+    #   splits: i)   train / test (90% - 10%)
+    #           ii)  train (train / validate / calibrate) (70% - 15% - 15%) on the original train split
 
     original_df = pd.read_csv(args.input_csv)
 
@@ -49,31 +57,45 @@ def split_dataset(args: argparse.Namespace) -> None:
     # randomize the dataset, since currently the images are sorted by age
     randomized_csv = original_df.sample(frac=1, random_state=13).reset_index(drop=True)
 
-    full_train_set, test_set = train_test_split(
+    full_train_set, full_test_set = train_test_split(
         randomized_csv,
         test_size=args.test_train_split,
         stratify=randomized_csv['age'],
         random_state=7
     )
 
-    train_set, valid_set = train_test_split(
+    train_set, valid_calibrate_set = train_test_split(
         full_train_set,
-        test_size=args.valid_train_split,
+        test_size=args.valid_calibrate_split,
         stratify=full_train_set['age'],
         random_state=7
     )
 
+    valid_set, calibration_set = train_test_split(
+        valid_calibrate_set,
+        test_size=args.calibrate_split,
+        stratify=valid_calibrate_set['age'],
+        random_state=7
+    )
+
+    # 17720 images; median age = 29.00 mean age = 32.03
     print(f"train    -> {len(train_set)} images; median age = {train_set['age'].median():.2f}"
           f" mean age = {train_set['age'].mean():.2f}")
 
+    # 1564 images; median age = 29.00 mean age = 32.06
     print(f"validate -> {len(valid_set)} images; median age = {valid_set['age'].median():.2f}"
           f" mean age = {valid_set['age'].mean():.2f}")
 
-    print(f"test     -> {len(test_set)} images; median age = {test_set['age'].median():.2f}"
-          f" mean age = {test_set['age'].mean():.2f}")
+    # 1564 images; median age = 29.00 mean age = 32.0
+    print(f"calibrate -> {len(calibration_set)} images; median age = {calibration_set['age'].median():.2f}"
+          f" mean age = {calibration_set['age'].mean():.2f}")
+
+    # 2317 images; median age = 29.00 mean age = 32.01
+    print(f"test     -> {len(full_test_set)} images; median age = {full_test_set['age'].median():.2f}"
+          f" mean age = {full_test_set['age'].mean():.2f}")
 
     # save the train/test datasets as separate csv files
-    datasets = [train_set, valid_set, test_set]
+    datasets = [train_set, valid_set, calibration_set, full_test_set]
     [datasets[i].to_csv(output_paths[i], index=False) for i in range(len(datasets))]
 
 
@@ -84,13 +106,12 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_train', type=str, default='dataset/processed/train_dataset.csv')
     parser.add_argument('--dataset_validate', type=str, default='dataset/processed/valid_dataset.csv')
     parser.add_argument('--dataset_test', type=str, default='dataset/processed/test_dataset.csv')
-    parser.add_argument('--test_train_split', type=float, default=0.15)
-    parser.add_argument('--valid_train_split', type=float, default=0.2)
+    parser.add_argument('--dataset_calibrate', type=str, default='dataset/processed/calibrate_dataset.csv')
+    parser.add_argument('--test_train_split', type=float, default=0.10)
+    parser.add_argument('--valid_calibrate_split', type=float, default=0.15)
+    parser.add_argument('--calibrate_split', type=float, default=0.5)
     parser.add_argument('--age_threshold', type=int, default=80)
     parser.add_argument('--force_run', type=bool, default=False)
 
     cl_arguments = parser.parse_args()
     split_dataset(cl_arguments)
-
-
-

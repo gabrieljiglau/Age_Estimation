@@ -3,7 +3,12 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 
-class ConformaRegressor:
+class ConformalRegressor:
+
+    """
+    Uncertainty quantification method that produces statistically valid
+    prediction regions / intervals for the face age estimator
+    """
 
     def __init__(self, model: nn.Module, loss_function: nn.Module):
 
@@ -18,6 +23,8 @@ class ConformaRegressor:
         :param calibration_set: the set for which the residuals will be computed
         :return: the list of residuals and the length of the calibration dataset
         """
+
+        # !! TODO: save the residuals; add as a parameter the path to the residuals
 
         residuals = []
         for image, target, _, _ in calibration_set:
@@ -36,7 +43,7 @@ class ConformaRegressor:
             residuals: list[float],
             num_samples: int,
             coverage: float=0.9
-    ) -> tuple[float, float]:
+    ) -> tuple[float, float, float]:
 
         """ Makes the final prediction, taking into account the computed residuals
 
@@ -44,7 +51,7 @@ class ConformaRegressor:
         :param residuals: the list of normalized errors from the calibration set
         :param num_samples: the length of the calibration set
         :param coverage: a float in [0, 1] that specifies the percentage of errors that the algorithm takes into account
-        :return: a lower bound and upper bound for the prediction
+        :return: the prediction, as well as a lower bound and upper bound for it
         """
 
         sorted_residuals = sorted(residuals, reverse=False)
@@ -57,4 +64,4 @@ class ConformaRegressor:
         lower_bound = pred_age - quantile * variance
         upper_bound = pred_age + quantile * variance
 
-        return lower_bound, upper_bound
+        return pred_age, lower_bound, upper_bound

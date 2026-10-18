@@ -29,8 +29,8 @@ def get_train_transforms(
         ]
     )
 
-def get_deterministic_transforms(
-        img_size:int=200,
+def get_eval_transforms(
+        img_size:int=224,
         mean: list[float] | None = None,
         std: list[float] | None = None
 ) -> v2.Compose:

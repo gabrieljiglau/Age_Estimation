@@ -6,11 +6,11 @@ from tqdm import tqdm
 import torch
 import torch.nn as nn
 import numpy as np
+from torch.utils.data import DataLoader
 from torch.amp import GradScaler, autocast
 from torch.utils.tensorboard import SummaryWriter
 from .loss_metric import MeanVarianceLoss
-from torch.utils.data import DataLoader
-from ..utils import compute_mae, compute_cumulative_score
+from src.utils import compute_mae, compute_cumulative_score
 
 class Trainer:
 
@@ -113,7 +113,7 @@ class Trainer:
             train_loss += loss.item()
 
             with torch.no_grad():
-                pred_ages = self.loss_function.predict_age(logits)
+                pred_ages, _ = self.loss_function.predict_age(logits)
 
             mae += compute_mae(pred_ages, target)
 
@@ -242,4 +242,3 @@ class Trainer:
 
         self.best_checkpoint = file_name
         print(f"Saved {file_name}, mae_loss = {mae:.2f}")
-
