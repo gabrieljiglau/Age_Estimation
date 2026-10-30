@@ -38,7 +38,7 @@ class MeanVarianceLoss(nn.Module):
         """
         # view(a, b)
         # a = -1 if you don't know the number of dimensions beforehand
-        # b = the size of that specific dimensions;
+        # b = the size of that specific dimension;
         # in this case, the tensor is 2D, therefore, view(-1, 1) means 'flatten it into a 1D column vector'
 
         target = target.view(-1, 1)

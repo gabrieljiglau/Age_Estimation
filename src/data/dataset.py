@@ -61,7 +61,7 @@ def build_dataloaders(
 ) -> tuple [DataLoader, DataLoader, DataLoader, DataLoader]:
 
     """
-        prepares and returns DataLoaders for each dataset (train, valid and test, calibration)
+        prepares and returns DataLoaders for each dataset (train, valid, test and calibration)
     """
 
     csv_dir = Path(csv_dir)

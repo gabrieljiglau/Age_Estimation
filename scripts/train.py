@@ -68,8 +68,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--cfg', type=str, default='../configs/cfg.yaml')
-    parser.add_argument('--train_loader', type=str, default='../processed/train_dataset.csv')
-    parser.add_argument('--valid_loader', type=str, default='../processed/valid_dataset.csv')
+    parser.add_argument('--root_dir', type=str, default='/home/gabriel/Documents/PycharmProjects/Age_Estimation')
+    parser.add_argument('--csv_dir', type=str, default='dataset/processed')
+    parser.add_argument('--train_loader', type=str, default='train_dataset.csv')
+    parser.add_argument('--valid_loader', type=str, default='valid_dataset.csv')
     parser.add_argument('--train_batch_size', type=int, default=96)
     parser.add_argument('--eval_batch_size', type=int, default=128)
     parser.add_argument('--force_run', type=bool, default=False)

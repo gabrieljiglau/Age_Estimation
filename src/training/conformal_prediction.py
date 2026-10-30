@@ -1,3 +1,5 @@
+from pathlib import Path
+import pickle
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -16,15 +18,27 @@ class ConformalRegressor:
         self.loss_function = loss_function
 
 
-    def calibrate(self, calibration_set: DataLoader) -> tuple[list[float], int]:
+    def calibrate(
+            self,
+            calibration_set: DataLoader,
+            residuals_path: Path | str
+    ) -> dict[str, int]:
 
         """ Computes the residuals from the provided calibration set
+            it computes and saves (using pickle) the residuals if they don't already exist,
+            otherwise directly reads (loads) them
 
+        :param residuals_path: path to save the computed residuals
         :param calibration_set: the set for which the residuals will be computed
-        :return: the list of residuals and the length of the calibration dataset
+        :return: a dictionary, containing the residuals and the length of the calibration dataset
         """
 
-        # !! TODO: save the residuals; add as a parameter the path to the residuals
+        residuals_path = Path(residuals_path)
+        if residuals_path.exists():
+            with open(residuals_path, 'rb') as file:
+                dict_info = pickle.load(file=file)
+
+            return dict_info
 
         residuals = []
         for image, target, _, _ in calibration_set:
@@ -35,12 +49,20 @@ class ConformalRegressor:
             normalized_score = torch.abs(pred_age - target) / variance
             residuals.append(normalized_score.item())
 
-        return residuals, len(calibration_set.dataset)
+        dict_info = {
+            'residuals': residuals,
+            'calibration_set_size': len(calibration_set.dataset)
+        }
+
+        with open(residuals_path, 'wb') as file:
+            pickle.dump(dict_info, file=file)
+
+        return dict_info
 
     def predict_age_range(
             self,
             instance: torch.Tensor,
-            residuals: list[float],
+            residuals: tuple[float],
             num_samples: int,
             coverage: float=0.9
     ) -> tuple[float, float, float]:

@@ -29,7 +29,7 @@ def compute_mae(predictions: torch.Tensor, target: torch.Tensor) -> float:
     return torch.abs(predictions.view(-1) - target.view(-1)).mean().item()
 
 @torch.no_grad()
-def compute_cumulative_score(predictions: torch.Tensor, target: torch.Tensor, threshold: int=5) -> float:
+def compute_cumulative_score(predictions: torch.Tensor, target: torch.Tensor, threshold: float=3.5) -> float:
 
     """
     Cumulative Score (CS) - proportion of samples with |pred - true| <= threshold
