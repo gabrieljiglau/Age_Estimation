@@ -1,0 +1,25 @@
+# Model
+model:
+  output_dim: 80
+  dropout: 0.3
+
+# Data
+data:
+  root_dir: ""
+  csv_dir: ""
+
+# Training
+training:
+  epochs: 50
+  batch_size:
+  eval_batch_size:
+  seed:
+
+# Optimizer
+optimizer:
+
+scheduler: ??
+
+loss:
+
+logging:
