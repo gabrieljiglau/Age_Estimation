@@ -3,9 +3,10 @@ from pathlib import Path
 import torch.cuda
 import time
 from PIL import Image
+from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
+from torchvision.transforms import v2
 from tqdm import tqdm
-
 from src.estimator import build_model
 from src.training import ConformalRegressor, MeanVarianceLoss
 from src.data import build_dataloaders, get_train_transforms, get_eval_transforms
@@ -18,21 +19,13 @@ Usage:
 --------------------------
     python scripts/inference.py
             --cfg
-            --checkpoint
-            --root_dir
+            --weights_checkpoint
             --test_loader
             --calibrate_loader
             --residuals_path
-            --eval_batch_size
             --full_eval
             --new_image
             --coverage
-            --img_size
-            --mean
-            --std 
---------------------------
-
-    amendments: mean and std are lists of size 3, a mean / std for each channel (R, G, B)
 """
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -48,20 +41,9 @@ def _parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        '--checkpoint',
-        type=str
-    )
-
-    parser.add_argument(
-        '--root_dir',
+        '--weights_checkpoint',
         type=str,
-        default='/home/gabriel/Documents/PycharmProjects/Age_Estimation'
-    )
-
-    parser.add_argument(
-        '--csv_dir',
-        type=str,
-        default='dataset/processed'
+        help="Path to where the checkpoint that holds the weights of the estimator"
     )
 
     parser.add_argument(
@@ -74,36 +56,6 @@ def _parse_args() -> argparse.Namespace:
         '--calibration_loader',
         type=str,
         default='calibration_dataset.csv'
-    )
-
-    parser.add_argument(
-        '--residuals_path',
-        type=str,
-        default='/home/gabriel/Documents/PycharmProjects/Age_Estimation/checkpoints/residuals.pkl'
-    )
-
-    parser.add_argument(
-        '--eval_batch_size',
-        type=int,
-        default=128
-    )
-
-    parser.add_argument(
-        '--img_size',
-        type=int,
-        default=220
-    )
-
-    parser.add_argument(
-        '--std',
-        type=float,
-        nargs='+'
-    )
-
-    parser.add_argument(
-        '--mean',
-        type=float,
-        nargs='+'
     )
 
     parser.add_argument(
@@ -135,13 +87,14 @@ def evaluate_dataset(
         prints the following statistics -> evaluation time, total loss, MAE loss, CS5 percentage
     """
 
-    model = build_model(cfg=args.cfg)
+    cfg = OmegaConf.load(args.cfg)
+    model = build_model(cfg=cfg)
 
     loss_function = MeanVarianceLoss(
-        lambda_mean=args.cfg.lambda_mean,
-        lambda_variance=args.cfg.lambda_variance,
-        start_age=args.cfg.start_age,
-        end_age=args.cfg.end_age
+        lambda_mean=cfg.loss.lambda_mean,
+        lambda_variance=cfg.loss.lambda_variance,
+        start_age=cfg.loss.start_age,
+        end_age=cfg.loss.end_age
     )
 
     checkpoint = torch.load(args.checkpoint, weights_only=True)
@@ -188,6 +141,7 @@ def evaluate_dataset(
 
 def predict_new_instance(
         args: argparse.Namespace,
+        transform: v2.Compose,
         eval_loader: DataLoader | None = None,
         instance_idx: int = 123
 ) -> tuple[float, float, float]:
@@ -197,6 +151,8 @@ def predict_new_instance(
     :return: the predicted age, as well as the adjusted age,
              based on the conformal residuals
     """
+
+    # TODO: after done training and results are satisfactory, allow for inference on multiple new images
 
     if args.new_image:
         file_extensions = ["jpg", "jpeg", "png"]
@@ -210,33 +166,33 @@ def predict_new_instance(
             raise ValueError(f"Unsupported extension {extension}. "
                              f"The only supported extensions are {file_extensions}")
 
-        # TODO: after done training and results are satisfactory,
-        #       modify the input size to be equal to the network so you can test on completely new images
-
     else:
 
         instance_idx %= len(eval_loader.dataset)
         img_source = eval_loader[instance_idx]['img_source']
 
-    tensor = torch.tensor(Image.open(img_source).convert('RGB'))
-    tensor.unsqueeze(dim=0)
-    tensor = tensor.to(device, non_blocking=True)
+    cfg = OmegaConf.load(args.cfg)
+
+    # TODO: annotate image
+
+    image = Image.open(img_source).convert('RGB')
+    tensor = transform(image).unsqueeze(0).to(device, non_blocking=True)
 
     model = build_model(cfg=args.cfg)
 
     loss_function = MeanVarianceLoss(
-        lambda_mean=args.cfg.lambda_mean,
-        lambda_variance=args.cfg.lambda_variance,
-        start_age=args.cfg.start_age,
-        end_age=args.cfg.end_age
+        lambda_mean=cfg.loss.lambda_mean,
+        lambda_variance=cfg.loss.lambda_variance,
+        start_age=cfg.loss.start_age,
+        end_age=cfg.loss.end_age
     )
 
-    checkpoint = torch.load(args.checkpoint, weights_only=True)
+    checkpoint = torch.load(args.weights_checkpoint, weights_only=True)
     model.load_state_dict(checkpoint['model_state_dict'])
 
     model.eval()
     conformal_regressor = ConformalRegressor(model=model, loss_function=loss_function)
-    dict_info = conformal_regressor.calibrate(args.calibrate_loader, args.residuals_path)
+    dict_info = conformal_regressor.calibrate(args.calibrate_loader, cfg.inference.residuals_path)
 
     pred_age, lower_bound, upper_bound = (
         conformal_regressor.predict_age_range(
@@ -255,19 +211,29 @@ if __name__ == '__main__':
 
     cli_args = _parse_args()
 
-    train_transform = get_train_transforms(img_size=cli_args.img_size, mean=cli_args.mean, std=cli_args.std)
-    eval_transform = get_eval_transforms(img_size=cli_args.img_size, mean=cli_args.mean, std=cli_args.std)
+    train_transform = get_train_transforms(
+        img_size=cli_args.cfg.img_size,
+        mean=cli_args.cfg.mean,
+        std=cli_args.std
+    )
+
+    eval_transform = get_eval_transforms(
+        img_size=cli_args.cfg.img_size,
+        mean=cli_args.cfg.mean,
+        std=cli_args.cfg.std
+    )
 
     _, _, test_loader, _ = build_dataloaders(
-        root_dir=cli_args.root_dir,
-        csv_dir=cli_args.csv_dir,
+        root_dir=cli_args.cfg.root_dir,
+        csv_dir=cli_args.cfg.csv_dir,
         train_transform=train_transform,
         val_transform=eval_transform,
         test_transform=eval_transform,
-        eval_batch_size=cli_args.eval_batch_size
+        eval_batch_size=cli_args.cfg.eval_batch_size
     )
 
     if cli_args.full_eval():
-        evaluate_dataset(eval_loader=test_loader)
+        evaluate_dataset(args=cli_args, eval_loader=test_loader)
     else:
-        predict_new_instance(args=cli_args, eval_loader=test_loader, instance_idx=cli_args.instance_idx)
+        predict_new_instance(args=cli_args, transform=eval_transform,
+                             eval_loader=test_loader, instance_idx=cli_args.instance_idx)

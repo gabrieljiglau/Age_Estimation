@@ -1,8 +1,29 @@
 import torch
 import torch.nn as nn
+from torch.nn import Sequential
 from torchvision.models import resnet50
 from torchvision.models import ResNet50_Weights
 from omegaconf import DictConfig
+
+
+def _make_head(
+        in_features: int,
+        num_classes: int=80,
+        dropout_prob: float=0.3
+) -> Sequential:
+
+    """
+        freezes all the layers (except the last one) of the pre-trained network
+        and adds a new fully connected layer at the end
+    """
+
+    return nn.Sequential(
+        nn.Dropout(dropout_prob),
+        nn.Linear(in_features, 512),
+        nn.ReLU(),
+        nn.Linear(512, num_classes)
+    )
+
 
 class AgeEstimator(nn.Module):
 
@@ -18,34 +39,13 @@ class AgeEstimator(nn.Module):
 
         super(AgeEstimator, self).__init__()
 
+        in_features = 2048
         self.num_classes = num_classes
         self.dropout_prob = dropout_prob
 
         backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
-        self.estimator.backbone = backbone
-        self._make_head(self.num_classes, self.dropout_prob)
-
-
-    def _make_head(
-            self,
-            num_classes: int=80,
-            dropout_prob: float=0.3
-    ) -> None:
-
-        """
-            freezes all the layers (except the last one) of the pre-trained network
-            and adds a new fully connected layer at the end
-        """
-
-        num_features = self.estimator.fc.in_features
-
-        self.estimator.head = nn.Sequential(
-            nn.Dropout(dropout_prob),
-            nn.Linear(num_features, 512),
-            nn.ReLU(),
-            nn.Linear(num_features, num_classes)
-        )
-
+        backbone.fc = _make_head(in_features, self.num_classes, self.dropout_prob)
+        self.estimator = backbone
 
     def forward(
             self,
@@ -74,5 +74,5 @@ def build_model(cfg: DictConfig) -> AgeEstimator:
     """
 
     return AgeEstimator(
-        num_classes=cfg.num_classes,
+        num_classes=cfg.model.output_dim,
         dropout_prob=cfg.model.dropout)

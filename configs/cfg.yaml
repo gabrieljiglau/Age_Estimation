@@ -5,21 +5,41 @@ model:
 
 # Data
 data:
-  root_dir: ""
-  csv_dir: ""
+  root_dir: "/home/gabriel/Documents/PycharmProjects/Age_Estimation/dataset/raw/UTKFace"
+  csv_dir: "processed"
+  img_size: 224
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225] # mean and std are lists of size 3, a mean / std for each channel (R, G, B)
 
 # Training
 training:
   epochs: 50
-  batch_size:
-  eval_batch_size:
-  seed:
+  batch_size: 96
+  eval_batch_size: 128
+  seed: 42
 
 # Optimizer
 optimizer:
+  backbone_lr: 1e-4
+  head_lr: 5e-4
+  weight_decay: 1e-2
 
-scheduler: ??
-
+# Loss
 loss:
+  lambda_mean: 0.2
+  lambda_variance: 0.05 #
+  start_age: 0
+  end_age: 80
 
+ # Scheduler
+scheduler:
+  pct_start: 50
+
+# Logging
 logging:
+  log_dir: "runs"
+  save_dir: "checkpoints"
+
+# Inference
+  residuals_path: "/home/gabriel/Documents/PycharmProjects/Age_Estimation/checkpoints/residuals.pkl"
+
