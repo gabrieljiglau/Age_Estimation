@@ -21,10 +21,10 @@ class UtkFaceDataset(Dataset):
         """
 
         self.root_dir = Path(root_path)
-        self.dataset = pd.read_csv(csv_dir)
+        self.dataset = pd.read_csv(self.root_dir/csv_dir)
         self.transform = transform
 
-        columns = {'img_source', 'age', 'gender', 'race'}
+        columns = {'img_source', 'age', 'gender', 'ethnicity'}
         missing = columns - set(self.dataset.columns)
         if missing:
             raise ValueError(f"CSV is missing columns: {missing}")
@@ -65,6 +65,11 @@ def build_dataloaders(
     """
 
     csv_dir = Path(csv_dir)
+
+    """
+    print(f"root_dir =  {root_dir}")
+    print(f"csv_dir = {csv_dir}")
+    """
 
     train_dataset = UtkFaceDataset(root_dir, csv_dir / "train_dataset.csv", train_transform)
     valid_dataset = UtkFaceDataset(root_dir, csv_dir / "valid_dataset.csv", val_transform)

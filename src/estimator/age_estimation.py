@@ -47,25 +47,24 @@ class AgeEstimator(nn.Module):
         backbone.fc = _make_head(in_features, self.num_classes, self.dropout_prob)
         self.estimator = backbone
 
+    @property
+    def num_parameters(self) -> float:
+        """
+        total trainable parameters (in millions), rounded to 2 decimals
+        """
+        return round(sum(p.numel() for p in self.parameters() if p.requires_grad) / 1e6, 2)
+
     def forward(
             self,
             x: torch.Tensor
     ) -> torch.Tensor:
 
         """
-
         :param x: data of shape [batch_size, 3 channels, height, width]
         :return: the vector of raw (non-normalized) predictions the model generated,
         """
 
         return self.estimator(x)
-
-    @property
-    def get_num_parameters(self) -> float:
-        """
-        total trainable parameters (in millions), rounded to 2 decimals
-        """
-        return round(sum(p.numel() for p in self.parameters() if p.requires_grad) / 1e6, 2)
 
 
 def build_model(cfg: DictConfig) -> AgeEstimator:

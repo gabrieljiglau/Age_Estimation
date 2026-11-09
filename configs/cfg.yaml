@@ -1,15 +1,18 @@
 # Model
 model:
+  name: 'ResNet-50'
   output_dim: 80
   dropout: 0.3
 
 # Data
 data:
-  root_dir: "/home/gabriel/Documents/PycharmProjects/Age_Estimation/dataset/raw/UTKFace"
+  root_dir: "/home/gabriel/Documents/PycharmProjects/Age_Estimation/dataset/"
   csv_dir: "processed"
   img_size: 224
+
+  # mean and std are lists of size 3, a mean / std for each channel (R, G, B)
   mean: [0.485, 0.456, 0.406]
-  std: [0.229, 0.224, 0.225] # mean and std are lists of size 3, a mean / std for each channel (R, G, B)
+  std: [0.229, 0.224, 0.225]
 
 # Training
 training:
@@ -33,7 +36,7 @@ loss:
 
  # Scheduler
 scheduler:
-  pct_start: 50
+  pct_start: 0.5
 
 # Logging
 logging:

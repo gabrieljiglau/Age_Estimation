@@ -20,7 +20,7 @@ class Trainer:
             loss_function: MeanVarianceLoss,
             device: torch.Device,
             cfg: DictConfig
-    ) -> None:
+    ):
 
         self.model = model
         self.loss_function = loss_function.to(device)
@@ -32,8 +32,8 @@ class Trainer:
         backbone_params, head_params = self._split_params()
         self.optimizer = torch.optim.AdamW(
             [
-                {'backbone': backbone_params, 'lr': cfg.optimizer.backbone_lr},
-                {'head': head_params, 'lr': cfg.optimizer.head_lr}
+                {'params': backbone_params, 'lr': cfg.optimizer.backbone_lr},
+                {'params': head_params, 'lr': cfg.optimizer.head_lr}
             ],
             weight_decay = cfg.optimizer.weight_decay
         )
@@ -65,7 +65,7 @@ class Trainer:
 
     def _build_scheduler(self, steps_per_epoch: int) -> None:
 
-        total_steps = self.cfg.training.epocgs + steps_per_epoch
+        total_steps = self.cfg.training.epochs + steps_per_epoch
         max_lrs = [self.cfg.optimizer.backbone_lr, self.cfg.optimizer.head_lr]
         self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
             self.optimizer,
@@ -179,13 +179,12 @@ class Trainer:
         min_loss = np.inf
 
         print(f"\n{'='*43}")
-        print(f"Model  : {self.cfg.model_name} ({self.model.num_parameters} million params)")
-        print(f"Loss   : {self.cfg.loss_type}")
+        print(f"Model  : {self.cfg.model.name} ({self.model.num_parameters} million params)")
         print(f"Device : {self.device} | AMP : {self.use_amp}")
         print(f"Epochs : {self.cfg.training.epochs} | Batch : {self.cfg.training.batch_size}")
         print(f"{'='*43}")
 
-        for epoch in range(1, self.cfg.training_epochs + 1):
+        for epoch in range(1, self.cfg.training.epochs + 1):
 
             start_time = time.time()
 

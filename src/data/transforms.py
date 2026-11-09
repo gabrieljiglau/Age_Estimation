@@ -1,3 +1,4 @@
+import torch
 from torchvision.transforms import v2
 
 def get_train_transforms(
@@ -23,7 +24,8 @@ def get_train_transforms(
             v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
             v2.RandomGrayscale(p=0.1),
             v2.RandomRotation(degrees=[-10, 10]),
-            v2.ToTensor(),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=mean, std=std),
             v2.RandomErasing(p=0.25, scale=(0.02, 0.10), ratio=(0.3, 0.3), value=0)  # erasing all affected pixels
         ]
@@ -45,7 +47,8 @@ def get_eval_transforms(
     return v2.Compose(
         [
             v2.Resize(img_size, img_size),
-            v2.ToTensor(),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=mean, std=std)
         ]
     )

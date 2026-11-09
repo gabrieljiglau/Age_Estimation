@@ -110,8 +110,8 @@ def train(args: argparse.Namespace) -> None:
         eval_batch_size=cfg.training.eval_batch_size
     )
 
-    print(f"Total learnable parameters = {model.get_num_parameters}")
-    trainer.train(train_loader=train_loader, valid_laoder=valid_loader)
+    print(f"Total learnable parameters = {model.num_parameters} million")
+    trainer.train(train_loader=train_loader, valid_loader=valid_loader)
 
 
 if __name__ == '__main__':
