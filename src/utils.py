@@ -19,7 +19,8 @@ def set_seed(seed: int=13) -> None:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-@torch.no_grad
+
+@torch.no_grad()
 def compute_mae(predictions: torch.Tensor, target: torch.Tensor) -> float:
 
     """

@@ -23,6 +23,7 @@ class MeanVarianceLoss(nn.Module):
         self.lambda_mean = lambda_mean
         self.lambda_variance = lambda_variance
 
+        ## aici fara +1 ???
         self.ages = torch.arange(start_age, end_age + 1, dtype=torch.float32)
 
     def compute_loss(

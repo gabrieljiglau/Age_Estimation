@@ -11,17 +11,20 @@ class UtkFaceDataset(Dataset):
     def __init__(self,
                  root_path: str | Path,
                  csv_dir: str | Path,
+                 raw_dir: str | Path,
                  transform: Compose | None = None
     ) -> None:
 
         """
-        :param root_path: path/to/UTKFace dataset
+        :param root_path: path/to/processed/UTKFace dataset
         :param csv_dir: path to the csv file that contains the image, the age, sex and ethnicity
+        :param raw_dir: path to the locally saved images
         :param transform: torchvision transform that will be added
         """
 
         self.root_dir = Path(root_path)
-        self.dataset = pd.read_csv(self.root_dir/csv_dir)
+        self.dataset = pd.read_csv(self.root_dir/csv_dir).sample(n=20)
+        self.raw_dir = raw_dir
         self.transform = transform
 
         columns = {'img_source', 'age', 'gender', 'ethnicity'}
@@ -38,7 +41,7 @@ class UtkFaceDataset(Dataset):
     ) -> tuple[torch.Tensor, torch.Tensor, int, int]:
 
         row = self.dataset.iloc[index]
-        image_path = self.root_dir / row["img_source"]
+        image_path = self.root_dir / self.raw_dir / row["img_source"]
         image = Image.open(image_path).convert("RGB")
 
         if self.transform:
@@ -51,6 +54,7 @@ class UtkFaceDataset(Dataset):
 def build_dataloaders(
         root_dir: str | Path,
         csv_dir: str | Path,
+        raw_dir: str | Path,
         train_transform: Compose,
         val_transform: Compose,
         test_transform: Compose,
@@ -71,10 +75,10 @@ def build_dataloaders(
     print(f"csv_dir = {csv_dir}")
     """
 
-    train_dataset = UtkFaceDataset(root_dir, csv_dir / "train_dataset.csv", train_transform)
-    valid_dataset = UtkFaceDataset(root_dir, csv_dir / "valid_dataset.csv", val_transform)
-    test_dataset = UtkFaceDataset(root_dir, csv_dir / "test_dataset.csv", test_transform)
-    calibrate_dataset = UtkFaceDataset(root_dir, csv_dir / "calibrate_dataset.csv", )
+    train_dataset = UtkFaceDataset(root_dir, csv_dir / "train_dataset.csv", raw_dir, train_transform)
+    valid_dataset = UtkFaceDataset(root_dir, csv_dir / "valid_dataset.csv", raw_dir, val_transform)
+    test_dataset = UtkFaceDataset(root_dir, csv_dir / "test_dataset.csv", raw_dir, test_transform)
+    calibrate_dataset = UtkFaceDataset(root_dir, csv_dir / "calibrate_dataset.csv", raw_dir)
 
     train_loader = DataLoader(
         train_dataset,

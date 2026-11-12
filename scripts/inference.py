@@ -226,6 +226,7 @@ if __name__ == '__main__':
     _, _, test_loader, _ = build_dataloaders(
         root_dir=cli_args.cfg.root_dir,
         csv_dir=cli_args.cfg.csv_dir,
+        raw_dir=cli_args.cfg.raw_dir,
         train_transform=train_transform,
         val_transform=eval_transform,
         test_transform=eval_transform,

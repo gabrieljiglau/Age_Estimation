@@ -23,8 +23,8 @@ Usage:
     python scripts/train.py
             --cfg
             --root_dir
-            --train_loader
-            --valid_loader
+            --train_dataset
+            --valid_dataset
             --test_train_split
             --force_run
 """
@@ -37,24 +37,6 @@ def _parse_args() -> argparse.Namespace:
         '--cfg',
         type=str,
         default='/home/gabriel/Documents/PycharmProjects/Age_Estimation/configs/cfg.yaml'
-    )
-
-    parser.add_argument(
-        '--train_loader',
-        type=str,
-        default='train_dataset.csv'
-    )
-
-    parser.add_argument(
-        '--valid_loader',
-        type=str,
-        default='valid_dataset.csv'
-    )
-
-    parser.add_argument(
-        '--train_batch_size',
-        type=int,
-        default=96
     )
 
     parser.add_argument(
@@ -103,6 +85,7 @@ def train(args: argparse.Namespace) -> None:
     train_loader, valid_loader, _, _ = build_dataloaders(
         root_dir=cfg.data.root_dir,
         csv_dir=cfg.data.csv_dir,
+        raw_dir=cfg.data.raw_dir,
         train_transform=train_transform,
         val_transform=eval_transform,
         test_transform=eval_transform,
@@ -110,7 +93,6 @@ def train(args: argparse.Namespace) -> None:
         eval_batch_size=cfg.training.eval_batch_size
     )
 
-    print(f"Total learnable parameters = {model.num_parameters} million")
     trainer.train(train_loader=train_loader, valid_loader=valid_loader)
 
 

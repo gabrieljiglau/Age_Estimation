@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn import Sequential
 from torchvision.models import resnet50
 from torchvision.models import ResNet50_Weights
-from omegaconf import DictConfig
+from omegaconf import DictConfig, ListConfig
 
 
 def _make_head(
@@ -67,7 +67,7 @@ class AgeEstimator(nn.Module):
         return self.estimator(x)
 
 
-def build_model(cfg: DictConfig) -> AgeEstimator:
+def build_model(cfg: DictConfig | ListConfig) -> AgeEstimator:
     """
     instantiate the AgeEstimator, based on an OmegaConf config file
     """

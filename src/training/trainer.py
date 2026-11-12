@@ -1,7 +1,10 @@
 import os
 import time
 from pathlib import Path
-from omegaconf import DictConfig
+from typing import Any
+
+from omegaconf import DictConfig, ListConfig
+from torch import Tensor
 from tqdm import tqdm
 import torch
 import torch.nn as nn
@@ -19,7 +22,7 @@ class Trainer:
             model: nn.Module,
             loss_function: MeanVarianceLoss,
             device: torch.Device,
-            cfg: DictConfig
+            cfg: DictConfig | ListConfig
     ):
 
         self.model = model
@@ -89,7 +92,7 @@ class Trainer:
 
         tqdm_train_loader = tqdm(
             train_loader,
-            desc=f"Epoch {epoch} / {self.cfg.training_epochs} [train]",
+            desc=f"Epoch {epoch} / {self.cfg.training.epochs} [train]",
             leave=False
         )
 
@@ -123,7 +126,7 @@ class Trainer:
         return train_loss, mae
 
     @torch.no_grad()
-    def _validate_one_epoch(self, valid_loader: DataLoader, epoch:int) -> tuple[float, float, float]:
+    def _validate_one_epoch(self, valid_loader: DataLoader, epoch:int) -> tuple[Tensor, int, float]:
 
         """
         :return: valid_loss, mae_valid_loss, cs5
@@ -132,14 +135,14 @@ class Trainer:
         mae_valid_loss = 0
         tqdm_valid_loader = tqdm(
             valid_loader,
-            desc=f"Epoch {epoch} / {self.cfg.training_epochs} [validation]",
+            desc=f"Epoch {epoch} / {self.cfg.training.epochs} [validation]",
             leave=False
         )
 
         all_preds: list[torch.Tensor] = []
         all_targets: list[torch.Tensor] = []
-        self.model.eval()
 
+        self.model.eval()
         for image, target, _, _ in tqdm_valid_loader:
             image = image.to(self.device, non_blocking=True)
             target = target.to(self.device, non_blocking=True)
@@ -176,6 +179,10 @@ class Trainer:
 
         self._build_scheduler(len(train_loader))
 
+        print(f"len(train_loader) = {len(train_loader)}")
+        print(f"len(train_loader.dataset) = {len(train_loader.dataset)}")
+
+
         min_loss = np.inf
 
         print(f"\n{'='*43}")
@@ -190,8 +197,8 @@ class Trainer:
 
             # training
             epoch_train_loss, mae_train_loss = self._train_one_epoch(train_loader, epoch)
-            epoch_train_loss /= len(train_loader)
-            mae_train_loss /= len(train_loader)
+            epoch_train_loss /= len(train_loader.dataset)
+            mae_train_loss /= len(train_loader.dataset)
 
             self.scheduler.step()
 
@@ -211,7 +218,7 @@ class Trainer:
             self._log_scalar("valid/epoch_mae", mae_valid_loss, epoch)
             self._log_scalar("valid/cs5", cs5, epoch)
 
-            print(f"Epoch {epoch} / {self.cfg.training_epochs}"
+            print(f"Epoch {epoch} / {self.cfg.training.epochs}"
                   f" train_loss = {epoch_train_loss:.4f} train_mae = {mae_train_loss:.4f}"
                   f" valid_loss = {epoch_valid_loss:.4f} valid_mae = {mae_valid_loss:.4f}"
                   f" cs5 = {cs5:.4f}"

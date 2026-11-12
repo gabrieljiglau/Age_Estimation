@@ -8,6 +8,7 @@ model:
 data:
   root_dir: "/home/gabriel/Documents/PycharmProjects/Age_Estimation/dataset/"
   csv_dir: "processed"
+  raw_dir: "raw/UTKFace"
   img_size: 224
 
   # mean and std are lists of size 3, a mean / std for each channel (R, G, B)
